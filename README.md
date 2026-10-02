@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # IronPulse Gym Management System 🏋️‍♂️
 
 A modern, responsive, and robust **Gym Management & Administration Web Application** built with **Python 3 Flask**, **MySQL**, and a responsive **Dark Navy Dashboard UI** with **Chart.js** analytics.
@@ -230,3 +231,7 @@ http://127.0.0.1:5000
 
 ## 📄 License
 This project is open-source and intended for academic, college demonstration, and personal gym management purposes.
+=======
+# gym-management-system
+Gym Management System using Python Flask and MySQL
+>>>>>>> d477f5cad2913818aaf4e13b43708ed74dcae452
