@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments - IronPulse Gym Management{% endblock %}
+{% block page_title %}Billing & Payments{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="filter-group">
+            <form action="{{ url_for('payments') }}" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        class="form-control" 
+                        placeholder="Search member, phone, txn..." 
+                        value="{{ q }}"
+                    >
+                </div>
+
+                <select name="method" aria-label="Filter by Payment Method" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">All Payment Modes</option>
+                    <option value="Cash" {% if selected_method == 'Cash' %}selected{% endif %}>Cash</option>
+                    <option value="UPI" {% if selected_method == 'UPI' %}selected{% endif %}>UPI</option>
+                    <option value="Card" {% if selected_method == 'Card' %}selected{% endif %}>Card</option>
+                    <option value="Bank Transfer" {% if selected_method == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+                </select>
+
+                <select name="status" aria-label="Filter by Status" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="Paid" {% if selected_status == 'Paid' %}selected{% endif %}>Paid</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Failed" {% if selected_status == 'Failed' %}selected{% endif %}>Failed</option>
+                </select>
+
+                <button type="submit" class="btn btn-secondary">Filter</button>
+                {% if q or selected_method or selected_status %}
+                    <a href="{{ url_for('payments') }}" class="btn btn-secondary" title="Clear">
+                        <i class="fa-solid fa-xmark"></i> Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <a href="{{ url_for('add_payment') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Record New Payment
+        </a>
+    </div>
+
+    <!-- Filtered Total Revenue Banner -->
+    <div style="background-color: rgba(37, 99, 235, 0.08); padding: 12px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <span style="color: var(--text-dim); font-size: 0.85rem;">Showing {{ payments | length }} Transactions</span>
+        <span style="font-weight: 700; color: #fff;">Total Collections: <span style="color: #60a5fa; font-size: 1.15rem;">{{ total_amount | currency }}</span></span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Receipt #</th>
+                    <th>Member</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Mode</th>
+                    <th>Transaction Ref</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                    <tr>
+                        <td style="color: var(--text-dim); font-weight: 600;">#{{ p.id }}</td>
+                        <td>
+                            <div class="table-member-name">{{ p.member_name }}</div>
+                            <div class="table-subtext">{{ p.member_phone }}</div>
+                        </td>
+                        <td style="font-weight: 700; color: #60a5fa; font-size: 1rem;">
+                            {{ p.amount | currency }}
+                        </td>
+                        <td>{{ p.payment_date | format_date }}</td>
+                        <td>
+                            <span class="badge" style="background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--border-color);">
+                                {{ p.payment_method }}
+                            </span>
+                        </td>
+                        <td>
+                            <code style="color: #94a3b8; font-size: 0.82rem;">{{ p.transaction_id or 'N/A' }}</code>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ p.status | lower }}">{{ p.status }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-btns" style="justify-content: flex-end;">
+                                <a href="{{ url_for('payment_receipt', id=p.id) }}" class="btn btn-secondary btn-icon" title="View & Print Invoice Receipt">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </a>
+                                <a href="{{ url_for('edit_payment', id=p.id) }}" class="btn btn-secondary btn-icon" title="Edit Payment">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form action="{{ url_for('delete_payment', id=p.id) }}" method="POST" class="delete-form" data-item="Receipt #{{ p.id }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-icon" title="Delete Payment Record">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 36px;">
+                            No payment transactions recorded.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

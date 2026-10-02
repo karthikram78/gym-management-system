@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Members - IronPulse Gym Management{% endblock %}
+{% block page_title %}Member Management{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="filter-group">
+            <form action="{{ url_for('members') }}" method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <!-- Search Box -->
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        class="form-control" 
+                        placeholder="Search by name, email, phone..." 
+                        value="{{ q }}"
+                    >
+                </div>
+
+                <!-- Status Filter -->
+                <select name="status" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Expired" {% if selected_status == 'Expired' %}selected{% endif %}>Expired</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Inactive" {% if selected_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+
+                <!-- Plan Filter -->
+                <select name="plan_id" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                    <option value="">All Plans</option>
+                    {% for p in plans %}
+                        <option value="{{ p.id }}" {% if selected_plan == p.id|string %}selected{% endif %}>
+                            {{ p.plan_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="btn btn-secondary">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </button>
+                {% if q or selected_status or selected_plan %}
+                    <a href="{{ url_for('members') }}" class="btn btn-secondary" title="Clear Filters">
+                        <i class="fa-solid fa-xmark"></i> Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <a href="{{ url_for('add_member') }}" class="btn btn-primary">
+            <i class="fa-solid fa-user-plus"></i> Add New Member
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Full Name</th>
+                    <th>Contact Info</th>
+                    <th>Plan</th>
+                    <th>Trainer</th>
+                    <th>Validity (Start - End)</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in members %}
+                    <tr>
+                        <td style="color: var(--text-dim); font-weight: 600;">#{{ m.id }}</td>
+                        <td>
+                            <div class="table-member-name">{{ m.full_name }}</div>
+                            <div class="table-subtext">Joined: {{ m.joining_date | format_date }}</div>
+                        </td>
+                        <td>
+                            <div>{{ m.phone }}</div>
+                            <div class="table-subtext">{{ m.email }}</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-plan">{{ m.plan_name or 'None' }}</span>
+                        </td>
+                        <td>
+                            {{ m.trainer_name or '<span style="color: var(--text-dim);">Unassigned</span>' | safe }}
+                        </td>
+                        <td>
+                            <div style="font-size: 0.85rem;">{{ m.membership_start | format_date }} &rarr; {{ m.membership_end | format_date }}</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ m.status | lower }}">{{ m.status }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-btns" style="justify-content: flex-end;">
+                                <a href="{{ url_for('view_member', id=m.id) }}" class="btn btn-secondary btn-icon" title="View Details">
+                                    <i class="fa-regular fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_member', id=m.id) }}" class="btn btn-secondary btn-icon" title="Edit Member">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form action="{{ url_for('delete_member', id=m.id) }}" method="POST" class="delete-form" data-item="Member '{{ m.full_name }}'" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-icon" title="Delete Member">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 36px;">
+                            <i class="fa-solid fa-users-slash" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                            No members found matching your search criteria.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

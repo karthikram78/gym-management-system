@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - IronPulse Gym Management{% endblock %}
+{% block page_title %}Executive Dashboard{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards Grid -->
+<div class="stats-grid">
+    <!-- Total Members -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-blue">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Total Members</div>
+            <div class="stat-value">{{ stats.total_members }}</div>
+        </div>
+    </div>
+
+    <!-- Active Members -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-green">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Active Members</div>
+            <div class="stat-value">{{ stats.active_members }}</div>
+        </div>
+    </div>
+
+    <!-- Expired Members -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-red">
+            <i class="fa-solid fa-user-xmark"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Expired Members</div>
+            <div class="stat-value">{{ stats.expired_members }}</div>
+        </div>
+    </div>
+
+    <!-- Total Trainers -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-purple">
+            <i class="fa-solid fa-user-ninja"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Total Trainers</div>
+            <div class="stat-value">{{ stats.total_trainers }}</div>
+        </div>
+    </div>
+
+    <!-- Today's Attendance -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-emerald">
+            <i class="fa-solid fa-clipboard-check"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Today's Attendance</div>
+            <div class="stat-value">{{ stats.today_attendance }}</div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue -->
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-amber">
+            <i class="fa-solid fa-indian-rupee-sign"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Monthly Revenue</div>
+            <div class="stat-value">{{ stats.monthly_revenue | currency }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="charts-grid">
+    <!-- Monthly Revenue Trend -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fa-solid fa-chart-line"></i> Monthly Revenue Trend
+            </h2>
+            <span class="badge badge-plan">Last 6 Months</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas 
+                    id="monthlyRevenueChart"
+                    data-labels='{{ revenue_chart.labels | tojson }}'
+                    data-data='{{ revenue_chart.data | tojson }}'
+                ></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Membership Status Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fa-solid fa-chart-pie"></i> Membership Status
+            </h2>
+            <span class="badge badge-active">{{ stats.active_members }} Active</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas 
+                    id="membershipStatusChart"
+                    data-active="{{ membership_breakdown.Active }}"
+                    data-expired="{{ membership_breakdown.Expired }}"
+                    data-pending="{{ membership_breakdown.Pending }}"
+                    data-inactive="{{ membership_breakdown.Inactive }}"
+                ></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Attendance Summary Banner -->
+<div class="card" style="margin-bottom: 30px;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fa-solid fa-calendar-check"></i> Today's Attendance Overview ({{ current_date }})
+        </h2>
+        <a href="{{ url_for('attendance') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-right"></i> Open Attendance Desk
+        </a>
+    </div>
+    <div class="card-body" style="padding: 16px 24px;">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge badge-present" style="font-size: 0.9rem; padding: 6px 14px;">
+                    <i class="fa-solid fa-circle-check"></i> Present: {{ attendance_summary.present }}
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge badge-late" style="font-size: 0.9rem; padding: 6px 14px;">
+                    <i class="fa-solid fa-clock"></i> Late: {{ attendance_summary.late }}
+                </span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="badge badge-absent" style="font-size: 0.9rem; padding: 6px 14px;">
+                    <i class="fa-solid fa-circle-xmark"></i> Absent: {{ attendance_summary.absent }}
+                </span>
+            </div>
+            <div style="margin-left: auto; color: var(--text-dim); font-size: 0.85rem;">
+                Records update in real-time on member check-in/out
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tables Grid: Recent Members & Recent Payments -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+    <!-- Recent Members -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fa-solid fa-user-plus"></i> Recent Members
+            </h2>
+            <a href="{{ url_for('members') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Plan</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in recent_members %}
+                        <tr>
+                            <td>
+                                <div class="table-member-name">{{ m.full_name }}</div>
+                                <div class="table-subtext">{{ m.email }}</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-plan">{{ m.plan_name or 'No Plan' }}</span>
+                            </td>
+                            <td>{{ m.joining_date | format_date }}</td>
+                            <td>
+                                <span class="badge badge-{{ m.status | lower }}">{{ m.status }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_member', id=m.id) }}" class="btn btn-secondary btn-icon" title="View Profile">
+                                    <i class="fa-regular fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                                No recent members found.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fa-solid fa-receipt"></i> Recent Payments
+            </h2>
+            <a href="{{ url_for('payments') }}" class="btn btn-secondary btn-sm">View All</a>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Date</th>
+                        <th>Receipt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in recent_payments %}
+                        <tr>
+                            <td>
+                                <div class="table-member-name">{{ p.member_name }}</div>
+                                <div class="table-subtext">{{ p.transaction_id or 'Manual Entry' }}</div>
+                            </td>
+                            <td style="font-weight: 700; color: #60a5fa;">{{ p.amount | currency }}</td>
+                            <td>{{ p.payment_method }}</td>
+                            <td>{{ p.payment_date | format_date }}</td>
+                            <td>
+                                <a href="{{ url_for('payment_receipt', id=p.id) }}" class="btn btn-secondary btn-icon" title="Print Receipt">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                                No recent payment transactions.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

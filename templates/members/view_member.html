@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} - Member Profile{% endblock %}
+{% block page_title %}Member Profile{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #fff;">{{ member.full_name }}</h2>
+        <div style="color: var(--text-dim); font-size: 0.85rem;">Member ID: #{{ member.id }} &bull; Enrolled on {{ member.joining_date | format_date }}</div>
+    </div>
+
+    <div class="action-btns">
+        <a href="{{ url_for('members') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> All Members
+        </a>
+        <a href="{{ url_for('edit_member', id=member.id) }}" class="btn btn-primary">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+        </a>
+        <a href="{{ url_for('add_payment') }}?member_id={{ member.id }}" class="btn btn-success">
+            <i class="fa-solid fa-plus"></i> Collect Payment
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+    <!-- Membership Status Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-id-badge"></i> Membership Plan</h3>
+            <span class="badge badge-{{ member.status | lower }}">{{ member.status }}</span>
+        </div>
+        <div class="card-body">
+            <div style="font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin-bottom: 4px;">
+                {{ member.plan_name or 'No Active Plan' }}
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">
+                Fee: {{ member.price | currency if member.price else 'N/A' }} / {{ member.duration_months or 0 }} Months
+            </div>
+            <div style="border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--text-dim);">Start Date:</span>
+                    <span>{{ member.membership_start | format_date }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-dim);">Valid Until:</span>
+                    <span style="font-weight: 700; color: #fff;">{{ member.membership_end | format_date }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact & Personal Details Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-regular fa-address-card"></i> Contact Information</h3>
+        </div>
+        <div class="card-body" style="font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: var(--text-dim);">Phone:</span>
+                <span style="font-weight: 600; color: #fff;">{{ member.phone }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: var(--text-dim);">Email:</span>
+                <span>{{ member.email }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: var(--text-dim);">Gender:</span>
+                <span>{{ member.gender }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: var(--text-dim);">Date of Birth:</span>
+                <span>{{ member.dob | format_date if member.dob else 'Not provided' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-dim);">Address:</span>
+                <span>{{ member.address or 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trainer Card -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-user-ninja"></i> Assigned Trainer</h3>
+        </div>
+        <div class="card-body">
+            {% if member.trainer_name %}
+                <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 4px;">
+                    {{ member.trainer_name }}
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+                    Contact: {{ member.trainer_phone }}
+                </div>
+            {% else %}
+                <div style="color: var(--text-dim); padding: 12px 0;">
+                    No personal trainer assigned. Member is working out self-guided.
+                </div>
+            {% endif %}
+            <div style="border-top: 1px solid var(--border-color); padding-top: 12px;">
+                <div style="color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase;">Total Gym Spending</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: #34d399;">{{ total_spent | currency }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs / Sections: Payment History & Attendance History -->
+<div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px;">
+    <!-- Payment Records -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-receipt"></i> Payment History</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Receipt ID</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Print</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                        <tr>
+                            <td style="color: var(--text-dim); font-weight: 600;">#{{ p.id }}</td>
+                            <td style="color: #60a5fa; font-weight: 700;">{{ p.amount | currency }}</td>
+                            <td>{{ p.payment_date | format_date }}</td>
+                            <td>{{ p.payment_method }}</td>
+                            <td><span class="badge badge-{{ p.status | lower }}">{{ p.status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('payment_receipt', id=p.id) }}" class="btn btn-secondary btn-icon" title="View Receipt">
+                                    <i class="fa-solid fa-print"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                                No payments recorded yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Attendance History -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-clipboard-user"></i> Recent Attendance Records</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in attendance %}
+                        <tr>
+                            <td>{{ a.attendance_date | format_date }}</td>
+                            <td>{{ a.check_in_time or '--:--' }}</td>
+                            <td>{{ a.check_out_time or '--:--' }}</td>
+                            <td><span class="badge badge-{{ a.status | lower }}">{{ a.status }}</span></td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                                No attendance records logged yet.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

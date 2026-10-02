@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}IronPulse Gym Management{% endblock %}</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+                <div class="brand-text">IRONPULSE</div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <span class="menu-label">Main Navigation</span>
+                <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('members') }}" class="nav-link {% if request.endpoint and 'member' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Members</span>
+                </a>
+                <a href="{{ url_for('trainers') }}" class="nav-link {% if request.endpoint and 'trainer' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-user-ninja"></i>
+                    <span>Trainers</span>
+                </a>
+                <a href="{{ url_for('plans') }}" class="nav-link {% if request.endpoint and 'plan' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Membership Plans</span>
+                </a>
+                
+                <span class="menu-label">Operations</span>
+                <a href="{{ url_for('payments') }}" class="nav-link {% if request.endpoint and 'payment' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-credit-card"></i>
+                    <span>Payments</span>
+                </a>
+                <a href="{{ url_for('attendance') }}" class="nav-link {% if request.endpoint and 'attendance' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                    <span>Attendance</span>
+                </a>
+                <a href="{{ url_for('reports') }}" class="nav-link {% if request.endpoint and 'report' in request.endpoint %}active{% endif %}">
+                    <i class="fa-solid fa-chart-simple"></i>
+                    <span>Reports</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="logout-link">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Sign Out</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <div class="main-wrapper">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle-btn" id="menuToggleBtn" aria-label="Toggle Navigation">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h1 class="page-title">{% block page_title %}Dashboard Overview{% endblock %}</h1>
+                </div>
+
+                <div class="topbar-right">
+                    <div class="current-date-badge">
+                        <i class="fa-regular fa-calendar"></i>
+                        <span>{{ current_date }}</span>
+                    </div>
+
+                    <div class="admin-profile">
+                        <div class="admin-avatar">
+                            {{ current_admin[0] | upper if current_admin else 'A' }}
+                        </div>
+                        <div class="admin-info">
+                            <span class="admin-name">{{ current_admin }}</span>
+                            <span class="admin-role">Super Admin</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="page-content">
+                <!-- Flash Notification Messages -->
+                <div class="alert-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}">
+                                    <span>
+                                        {% if category == 'success' %}
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        {% elif category == 'danger' %}
+                                            <i class="fa-solid fa-circle-exclamation"></i>
+                                        {% elif category == 'warning' %}
+                                            <i class="fa-solid fa-triangle-exclamation"></i>
+                                        {% else %}
+                                            <i class="fa-solid fa-circle-info"></i>
+                                        {% endif %}
+                                        {{ message }}
+                                    </span>
+                                    <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

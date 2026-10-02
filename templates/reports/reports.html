@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - IronPulse Gym Management{% endblock %}
+{% block page_title %}Analytics &amp; Reports Hub{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+    .no-print { display: none !important; }
+    .sidebar, .topbar { display: none !important; }
+    .main-wrapper { margin-left: 0 !important; }
+    .page-content { padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    body { background: white !important; color: black !important; }
+    .badge { border: 1px solid #888; }
+    .data-table th, .data-table td { color: black !important; border-color: #ccc !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Report Navigation Pills -->
+<div class="no-print" style="display: flex; gap: 10px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px;">
+    <a href="{{ url_for('reports', type='members') }}" class="btn {% if report_type == 'members' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-users"></i> Member Report
+    </a>
+    <a href="{{ url_for('reports', type='trainers') }}" class="btn {% if report_type == 'trainers' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-user-ninja"></i> Trainer Report
+    </a>
+    <a href="{{ url_for('reports', type='payments') }}" class="btn {% if report_type == 'payments' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-credit-card"></i> Payment Report
+    </a>
+    <a href="{{ url_for('reports', type='attendance') }}" class="btn {% if report_type == 'attendance' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-clipboard-user"></i> Attendance Report
+    </a>
+    <a href="{{ url_for('reports', type='expiry') }}" class="btn {% if report_type == 'expiry' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-hourglass-end"></i> Expiry Alert Report
+    </a>
+    <a href="{{ url_for('reports', type='revenue') }}" class="btn {% if report_type == 'revenue' %}btn-primary{% else %}btn-secondary{% endif %}">
+        <i class="fa-solid fa-chart-line"></i> Revenue Trend Report
+    </a>
+</div>
+
+<!-- Report Controls & Filters -->
+<div class="card no-print" style="margin-bottom: 24px;">
+    <div class="card-body" style="padding: 18px 24px;">
+        <form action="{{ url_for('reports') }}" method="GET" style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+            <input type="hidden" name="type" value="{{ report_type }}">
+
+            {% if report_type in ['members', 'payments', 'attendance'] %}
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">From Date</label>
+                    <input type="date" name="start_date" class="form-control" style="width: auto;" value="{{ start_date }}">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">To Date</label>
+                    <input type="date" name="end_date" class="form-control" style="width: auto;" value="{{ end_date }}">
+                </div>
+            {% endif %}
+
+            {% if report_type in ['members', 'trainers', 'payments', 'attendance'] %}
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Filter Status</label>
+                    <select name="status" class="form-select" style="width: auto;">
+                        <option value="">All Statuses</option>
+                        {% if report_type == 'members' %}
+                            <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Expired" {% if status == 'Expired' %}selected{% endif %}>Expired</option>
+                            <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Inactive" {% if status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        {% elif report_type == 'trainers' %}
+                            <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        {% elif report_type == 'payments' %}
+                            <option value="Paid" {% if status == 'Paid' %}selected{% endif %}>Paid</option>
+                            <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Failed" {% if status == 'Failed' %}selected{% endif %}>Failed</option>
+                        {% elif report_type == 'attendance' %}
+                            <option value="Present" {% if status == 'Present' %}selected{% endif %}>Present</option>
+                            <option value="Absent" {% if status == 'Absent' %}selected{% endif %}>Absent</option>
+                            <option value="Late" {% if status == 'Late' %}selected{% endif %}>Late</option>
+                        {% endif %}
+                    </select>
+                </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-secondary">
+                <i class="fa-solid fa-filter"></i> Apply Filters
+            </button>
+
+            {% if start_date or end_date or status %}
+                <a href="{{ url_for('reports', type=report_type) }}" class="btn btn-secondary" title="Reset">
+                    <i class="fa-solid fa-xmark"></i> Reset
+                </a>
+            {% endif %}
+
+            <div style="margin-left: auto;">
+                <button type="button" onclick="window.print()" class="btn btn-primary">
+                    <i class="fa-solid fa-print"></i> Print Report / PDF
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Main Printable Report Card -->
+<div class="card">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">
+                {% if report_type == 'members' %}
+                    <i class="fa-solid fa-users"></i> Member Roster Report
+                {% elif report_type == 'trainers' %}
+                    <i class="fa-solid fa-user-ninja"></i> Trainer Performance &amp; Payroll Report
+                {% elif report_type == 'payments' %}
+                    <i class="fa-solid fa-credit-card"></i> Revenue &amp; Payment Collections Report
+                {% elif report_type == 'attendance' %}
+                    <i class="fa-solid fa-clipboard-user"></i> Member Attendance Activity Report
+                {% elif report_type == 'expiry' %}
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> Membership Expiry Watchlist (Upcoming 30 Days)
+                {% elif report_type == 'revenue' %}
+                    <i class="fa-solid fa-chart-line"></i> Monthly Revenue Aggregation Report
+                {% endif %}
+            </h2>
+            <div style="color: var(--text-dim); font-size: 0.8rem; margin-top: 4px;">
+                Generated on: {{ current_date }} by {{ current_admin }}
+            </div>
+        </div>
+
+        {% if summary_metric %}
+            <div style="text-align: right;">
+                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-dim); font-weight: 700;">
+                    {{ summary_metric.label }}
+                </div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #60a5fa;">
+                    {{ summary_metric.value }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="table-responsive">
+
+        {% if report_type == 'members' %}
+        <!-- 1. Member Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Member Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Plan</th>
+                    <th>Trainer</th>
+                    <th>Joined</th>
+                    <th>Validity End</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in report_data %}
+                    <tr>
+                        <td>#{{ m.id }}</td>
+                        <td class="table-member-name">{{ m.full_name }}</td>
+                        <td>{{ m.phone }}</td>
+                        <td>{{ m.email }}</td>
+                        <td><span class="badge badge-plan">{{ m.plan_name or 'None' }}</span></td>
+                        <td>{{ m.trainer_name or 'Self' }}</td>
+                        <td>{{ m.joining_date | format_date }}</td>
+                        <td>{{ m.membership_end | format_date }}</td>
+                        <td><span class="badge badge-{{ m.status | lower }}">{{ m.status }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            <i class="fa-solid fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 12px;"></i>
+                            No member records found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif report_type == 'trainers' %}
+        <!-- 2. Trainer Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Trainer Name</th>
+                    <th>Specialization</th>
+                    <th>Phone</th>
+                    <th>Experience</th>
+                    <th>Assigned Clients</th>
+                    <th>Monthly Salary</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in report_data %}
+                    <tr>
+                        <td>#{{ t.id }}</td>
+                        <td class="table-member-name">{{ t.name }}</td>
+                        <td>{{ t.specialization }}</td>
+                        <td>{{ t.phone }}</td>
+                        <td>{{ t.experience }} Yrs</td>
+                        <td style="font-weight: 700; color: #60a5fa;">{{ t.assigned_members_count }} Clients</td>
+                        <td>{{ t.salary | currency }}</td>
+                        <td><span class="badge badge-{{ t.status | lower }}">{{ t.status }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            No trainer records found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif report_type == 'payments' %}
+        <!-- 3. Payment Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Receipt #</th>
+                    <th>Member Name</th>
+                    <th>Contact</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Method</th>
+                    <th>Transaction ID</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in report_data %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td class="table-member-name">{{ p.member_name }}</td>
+                        <td>{{ p.member_phone }}</td>
+                        <td style="font-weight: 700; color: #60a5fa;">{{ p.amount | currency }}</td>
+                        <td>{{ p.payment_date | format_date }}</td>
+                        <td>{{ p.payment_method }}</td>
+                        <td><code>{{ p.transaction_id or 'N/A' }}</code></td>
+                        <td><span class="badge badge-{{ p.status | lower }}">{{ p.status }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            No payment records found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif report_type == 'attendance' %}
+        <!-- 4. Attendance Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Member Name</th>
+                    <th>Phone</th>
+                    <th>Check-In</th>
+                    <th>Check-Out</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in report_data %}
+                    <tr>
+                        <td>{{ a.attendance_date | format_date }}</td>
+                        <td class="table-member-name">{{ a.member_name }}</td>
+                        <td>{{ a.member_phone }}</td>
+                        <td>{{ a.check_in_time or '--:--' }}</td>
+                        <td>{{ a.check_out_time or '--:--' }}</td>
+                        <td><span class="badge badge-{{ a.status | lower }}">{{ a.status }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            No attendance entries found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif report_type == 'expiry' %}
+        <!-- 5. Expiry Watchlist Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Member ID</th>
+                    <th>Member Name</th>
+                    <th>Contact</th>
+                    <th>Plan</th>
+                    <th>Start Date</th>
+                    <th>Expiry Date</th>
+                    <th>Days Remaining</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in report_data %}
+                    <tr>
+                        <td>#{{ e.id }}</td>
+                        <td class="table-member-name">{{ e.full_name }}</td>
+                        <td>{{ e.phone }}</td>
+                        <td><span class="badge badge-plan">{{ e.plan_name or 'None' }}</span></td>
+                        <td>{{ e.membership_start | format_date }}</td>
+                        <td style="font-weight: 700; color: #f87171;">{{ e.membership_end | format_date }}</td>
+                        <td>
+                            {% if e.days_remaining < 0 %}
+                                <span style="color: #ef4444; font-weight: 700;">Expired ({{ e.days_remaining | abs }} days ago)</span>
+                            {% elif e.days_remaining == 0 %}
+                                <span style="color: #f59e0b; font-weight: 700;">Expires Today!</span>
+                            {% else %}
+                                <span style="color: #fbbf24; font-weight: 700;">In {{ e.days_remaining }} Days</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge badge-{{ e.status | lower }}">{{ e.status }}</span></td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            <i class="fa-solid fa-circle-check" style="font-size: 2rem; color: #10b981; display: block; margin-bottom: 12px;"></i>
+                            No memberships expiring within the next 30 days.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% elif report_type == 'revenue' %}
+        <!-- 6. Monthly Revenue Report -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Month &amp; Year</th>
+                    <th>Total Paid Transactions</th>
+                    <th>Total Collected (&#8377;)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in report_data %}
+                    <tr>
+                        <td class="table-member-name" style="font-size: 1rem;">{{ r.month_name }}</td>
+                        <td>{{ r.total_transactions }} transactions</td>
+                        <td style="font-weight: 800; color: #34d399; font-size: 1.15rem;">{{ r.total_collected | currency }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            No revenue records available.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

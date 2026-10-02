@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Trainers - IronPulse Gym Management{% endblock %}
+{% block page_title %}Trainer Management{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="filter-group">
+            <form action="{{ url_for('trainers') }}" method="GET" style="display: flex; gap: 10px;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        class="form-control" 
+                        placeholder="Search trainer by name, spec, email..." 
+                        value="{{ q }}"
+                    >
+                </div>
+                <button type="submit" class="btn btn-secondary">Search</button>
+                {% if q %}
+                    <a href="{{ url_for('trainers') }}" class="btn btn-secondary" title="Clear">
+                        <i class="fa-solid fa-xmark"></i>
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+        <a href="{{ url_for('add_trainer') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Add New Trainer
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Trainer</th>
+                    <th>Specialization</th>
+                    <th>Contact</th>
+                    <th>Exp & Salary</th>
+                    <th>Assigned Members</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in trainers %}
+                    <tr>
+                        <td style="color: var(--text-dim); font-weight: 600;">#{{ t.id }}</td>
+                        <td>
+                            <div class="table-member-name">{{ t.name }}</div>
+                            <div class="table-subtext">Joined: {{ t.joining_date | format_date }}</div>
+                        </td>
+                        <td>
+                            <span class="badge badge-plan">{{ t.specialization }}</span>
+                        </td>
+                        <td>
+                            <div>{{ t.phone }}</div>
+                            <div class="table-subtext">{{ t.email }}</div>
+                        </td>
+                        <td>
+                            <div>{{ t.experience }} yrs exp.</div>
+                            <div class="table-subtext">{{ t.salary | currency }}/mo</div>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('view_trainer', id=t.id) }}" style="color: #60a5fa; font-weight: 600; text-decoration: underline;">
+                                {{ t.assigned_members_count }} Members
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ t.status | lower }}">{{ t.status }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="action-btns" style="justify-content: flex-end;">
+                                <a href="{{ url_for('view_trainer', id=t.id) }}" class="btn btn-secondary btn-icon" title="View Assigned Members">
+                                    <i class="fa-regular fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('edit_trainer', id=t.id) }}" class="btn btn-secondary btn-icon" title="Edit Trainer">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form action="{{ url_for('delete_trainer', id=t.id) }}" method="POST" class="delete-form" data-item="Trainer '{{ t.name }}'" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger btn-icon" title="Delete Trainer">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 36px;">
+                            No trainers found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

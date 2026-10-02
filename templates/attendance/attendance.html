@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance - IronPulse Gym Management{% endblock %}
+{% block page_title %}Attendance & Check-in Desk{% endblock %}
+
+{% block content %}
+<!-- Quick Summary Cards for Selected Date -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-blue">
+            <i class="fa-solid fa-users-line"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Logged Today</div>
+            <div class="stat-value">{{ counts.total_logged or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-green">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Present</div>
+            <div class="stat-value">{{ counts.present_count or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-amber">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Late</div>
+            <div class="stat-value">{{ counts.late_count or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-red">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Marked Absent</div>
+            <div class="stat-value">{{ counts.absent_count or 0 }}</div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: start;">
+    <!-- Check-In Action Card -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">
+                <i class="fa-solid fa-fingerprint"></i> Member Check-In
+            </h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('check_in') }}" method="POST">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="member_id" class="form-label">Member <span class="required">*</span></label>
+                    <select id="member_id" name="member_id" class="form-select" required>
+                        <option value="">-- Search & Select Member --</option>
+                        {% for m in members %}
+                            <option value="{{ m.id }}">{{ m.full_name }} ({{ m.phone }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="attendance_date" class="form-label">Date <span class="required">*</span></label>
+                    <input type="date" id="attendance_date" name="attendance_date" class="form-control" value="{{ selected_date }}" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="check_in_time" class="form-label">Check-In Time</label>
+                    <input type="time" id="check_in_time" name="check_in_time" class="form-control">
+                    <span style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">Leave blank to use current local time</span>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="Present" selected>Present (Standard)</option>
+                        <option value="Late">Late Entry</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Record Check-In
+                </button>
+            </form>
+
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed var(--border-color);">
+                <form action="{{ url_for('mark_absent') }}" method="POST" style="display: flex; gap: 8px;">
+                    <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+                    <select name="member_id" class="form-select" style="font-size: 0.85rem;" required>
+                        <option value="">-- Mark Member Absent --</option>
+                        {% for m in members %}
+                            <option value="{{ m.id }}">{{ m.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm" style="white-space: nowrap;">
+                        <i class="fa-solid fa-user-xmark"></i> Mark Absent
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Log Table Card -->
+    <div class="card">
+        <div class="card-header">
+            <div class="filter-group">
+                <form action="{{ url_for('attendance') }}" method="GET" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <label style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">Date:</label>
+                    <input 
+                        type="date" 
+                        name="date" 
+                        class="form-control" 
+                        style="width: auto; padding: 6px 10px;" 
+                        value="{{ selected_date }}" 
+                        onchange="this.form.submit()"
+                    >
+
+                    <div class="search-box" style="min-width: 180px;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input 
+                            type="text" 
+                            name="q" 
+                            class="form-control" 
+                            style="padding: 6px 10px 6px 32px;" 
+                            placeholder="Filter member..." 
+                            value="{{ q }}"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+                    {% if selected_date != today_ymd or q %}
+                        <a href="{{ url_for('attendance') }}" class="btn btn-secondary btn-sm" title="Reset to Today">Today</a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Member Name</th>
+                        <th>Plan</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                        <tr>
+                            <td>
+                                <div class="table-member-name">{{ r.member_name }}</div>
+                                <div class="table-subtext">{{ r.member_phone }}</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-plan">{{ r.plan_name or 'No Plan' }}</span>
+                            </td>
+                            <td style="font-weight: 600; color: #fff;">
+                                {{ r.check_in_time or '--:--' }}
+                            </td>
+                            <td>
+                                {% if r.check_out_time %}
+                                    <span style="font-weight: 600; color: #94a3b8;">{{ r.check_out_time }}</span>
+                                {% elif r.status in ['Present', 'Late'] %}
+                                    <!-- Instant Check-Out Action -->
+                                    <form action="{{ url_for('check_out') }}" method="POST" style="display: inline;">
+                                        <input type="hidden" name="record_id" value="{{ r.id }}">
+                                        <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 0.78rem;">
+                                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Check Out
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span style="color: var(--text-dim);">--</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ r.status | lower }}">{{ r.status }}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <form action="{{ url_for('delete_attendance', id=r.id) }}" method="POST" class="delete-form" data-item="attendance record of {{ r.member_name }}" style="display: inline;">
+                                    <input type="hidden" name="attendance_date" value="{{ selected_date }}">
+                                    <button type="submit" class="btn btn-danger btn-icon" title="Remove Entry">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 36px;">
+                                <i class="fa-regular fa-calendar-xmark" style="font-size: 2rem; margin-bottom: 12px; display: block;"></i>
+                                No attendance records logged for {{ selected_date | format_date }}.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

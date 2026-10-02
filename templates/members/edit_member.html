@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Member #{{ member.id }} - IronPulse Gym Management{% endblock %}
+{% block page_title %}Update Member Profile{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fa-solid fa-user-pen"></i> Editing Member: {{ member.full_name }} (#{{ member.id }})
+        </h2>
+        <a href="{{ url_for('members') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Back to Members
+        </a>
+    </div>
+
+    <div class="card-body">
+        <form action="{{ url_for('edit_member', id=member.id) }}" method="POST">
+            <h3 style="font-size: 1rem; color: #60a5fa; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <i class="fa-regular fa-id-card"></i> Personal Information
+            </h3>
+
+            <div class="form-grid">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label for="full_name" class="form-label">Full Name <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="full_name" 
+                        name="full_name" 
+                        class="form-control" 
+                        value="{{ member.full_name }}" 
+                        required
+                    >
+                </div>
+
+                <!-- Gender -->
+                <div class="form-group">
+                    <label for="gender" class="form-label">Gender <span class="required">*</span></label>
+                    <select id="gender" name="gender" class="form-select" required>
+                        <option value="Male" {% if member.gender == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if member.gender == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if member.gender == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+
+                <!-- Email -->
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address <span class="required">*</span></label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-control" 
+                        value="{{ member.email }}" 
+                        required
+                    >
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                    <label for="phone" class="form-label">Phone Number <span class="required">*</span></label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        name="phone" 
+                        class="form-control" 
+                        value="{{ member.phone }}" 
+                        required
+                    >
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="form-group">
+                    <label for="dob" class="form-label">Date of Birth</label>
+                    <input 
+                        type="date" 
+                        id="dob" 
+                        name="dob" 
+                        class="form-control" 
+                        value="{{ member.dob if member.dob else '' }}"
+                    >
+                </div>
+
+                <!-- Joining Date -->
+                <div class="form-group">
+                    <label for="joining_date" class="form-label">Joining Date <span class="required">*</span></label>
+                    <input 
+                        type="date" 
+                        id="joining_date" 
+                        name="joining_date" 
+                        class="form-control" 
+                        value="{{ member.joining_date }}" 
+                        required
+                    >
+                </div>
+
+                <!-- Address -->
+                <div class="form-group full-width">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea 
+                        id="address" 
+                        name="address" 
+                        class="form-control" 
+                        rows="2"
+                    >{{ member.address or '' }}</textarea>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1rem; color: #60a5fa; margin-top: 28px; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <i class="fa-solid fa-dumbbell"></i> Membership & Training
+            </h3>
+
+            <div class="form-grid">
+                <!-- Membership Plan -->
+                <div class="form-group">
+                    <label for="plan_id" class="form-label">Membership Plan</label>
+                    <select id="plan_id" name="plan_id" class="form-select">
+                        <option value="">No Plan</option>
+                        {% for p in plans %}
+                            <option 
+                                value="{{ p.id }}" 
+                                data-months="{{ p.duration_months }}" 
+                                data-price="{{ p.price }}"
+                                {% if member.plan_id == p.id %}selected{% endif %}
+                            >
+                                {{ p.plan_name }} ({{ p.duration_months }} Mo) - {{ p.price | currency }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Trainer -->
+                <div class="form-group">
+                    <label for="trainer_id" class="form-label">Assigned Trainer</label>
+                    <select id="trainer_id" name="trainer_id" class="form-select">
+                        <option value="">None / Self-Guided</option>
+                        {% for t in trainers %}
+                            <option value="{{ t.id }}" {% if member.trainer_id == t.id %}selected{% endif %}>
+                                {{ t.name }} ({{ t.specialization }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Start Date -->
+                <div class="form-group">
+                    <label for="membership_start" class="form-label">Validity Start Date</label>
+                    <input 
+                        type="date" 
+                        id="membership_start" 
+                        name="membership_start" 
+                        class="form-control" 
+                        value="{{ member.membership_start }}" 
+                        required
+                    >
+                </div>
+
+                <!-- End Date -->
+                <div class="form-group">
+                    <label for="membership_end" class="form-label">Validity Expiry Date</label>
+                    <input 
+                        type="date" 
+                        id="membership_end" 
+                        name="membership_end" 
+                        class="form-control" 
+                        value="{{ member.membership_end }}" 
+                        required
+                    >
+                </div>
+
+                <!-- Status -->
+                <div class="form-group">
+                    <label for="status" class="form-label">Membership Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="Active" {% if member.status == 'Active' %}selected{% endif %}>Active</option>
+                        <option value="Expired" {% if member.status == 'Expired' %}selected{% endif %}>Expired</option>
+                        <option value="Pending" {% if member.status == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Inactive" {% if member.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('members') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ trainer.name }} - Trainer Profile{% endblock %}
+{% block page_title %}Trainer Profile & Assigned Members{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #fff;">{{ trainer.name }}</h2>
+        <div style="color: var(--text-dim); font-size: 0.85rem;">Trainer ID: #{{ trainer.id }} &bull; Joined on {{ trainer.joining_date | format_date }}</div>
+    </div>
+
+    <div class="action-btns">
+        <a href="{{ url_for('trainers') }}" class="btn btn-secondary">
+            <i class="fa-solid fa-arrow-left"></i> All Trainers
+        </a>
+        <a href="{{ url_for('edit_trainer', id=trainer.id) }}" class="btn btn-primary">
+            <i class="fa-solid fa-pen-to-square"></i> Edit Trainer
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));">
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-purple">
+            <i class="fa-solid fa-medal"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Specialization</div>
+            <div style="font-weight: 700; color: #fff; font-size: 1.1rem;">{{ trainer.specialization }}</div>
+            <div class="table-subtext">{{ trainer.experience }} Years Experience</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-blue">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Assigned Members</div>
+            <div class="stat-value">{{ members | length }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-green">
+            <i class="fa-solid fa-indian-rupee-sign"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Monthly Compensation</div>
+            <div class="stat-value">{{ trainer.salary | currency }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-icon-amber">
+            <i class="fa-solid fa-phone"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-title">Contact</div>
+            <div style="font-weight: 600; color: #fff;">{{ trainer.phone }}</div>
+            <div class="table-subtext">{{ trainer.email }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fa-solid fa-user-group"></i> Active Clients Assigned to {{ trainer.name }}
+        </h3>
+        <span class="badge badge-plan">{{ members | length }} Enrolled</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Member ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in members %}
+                    <tr>
+                        <td style="color: var(--text-dim); font-weight: 600;">#{{ m.id }}</td>
+                        <td>
+                            <div class="table-member-name">{{ m.full_name }}</div>
+                            <div class="table-subtext">{{ m.email }}</div>
+                        </td>
+                        <td>{{ m.phone }}</td>
+                        <td><span class="badge badge-plan">{{ m.plan_name or 'No Plan' }}</span></td>
+                        <td><span class="badge badge-{{ m.status | lower }}">{{ m.status }}</span></td>
+                        <td>
+                            <a href="{{ url_for('view_member', id=m.id) }}" class="btn btn-secondary btn-icon" title="View Profile">
+                                <i class="fa-regular fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                            No members currently assigned to this trainer.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
